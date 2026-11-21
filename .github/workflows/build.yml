@@ -1,1 +1,33 @@
+name: Build ESP32-S3 firmware
 
+on:
+  push:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v4
+
+      - name: Build with ESP-IDF
+        uses: espressif/esp-idf-ci-action@v1
+        with:
+          esp_idf_version: v5.3
+          target: esp32s3
+          path: '.'
+
+      - name: Collect flashable files
+        run: |
+          mkdir -p firmware_out
+          cp build/*.bin firmware_out/ 2>/dev/null || true
+          cp build/partition_table/partition-table.bin firmware_out/ 2>/dev/null || true
+          cp build/bootloader/bootloader.bin firmware_out/ 2>/dev/null || true
+          cp build/flasher_args.json firmware_out/ 2>/dev/null || true
+
+      - name: Upload firmware
+        uses: actions/upload-artifact@v4
+        with:
+          name: firmware
+          path: firmware_out/
